@@ -1,0 +1,56 @@
+:root{
+	--bg:#0b0b0b;
+	--panel:#0f0f10;
+	--muted:#9aa0a6;
+	--accent:#e10600;
+	--glass: rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+	margin:0;
+	font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+	background: linear-gradient(180deg, #050505 0%, #0b0b0b 60%);
+	color:#e6e6e6;
+	-webkit-font-smoothing:antialiased;
+}
+.hero{
+	background: repeating-linear-gradient(45deg,#111 0 10px, #000 10px 20px), linear-gradient(90deg,#000 10%, rgba(225,16,0,0.05) 100%);
+	padding:20px 0;
+	border-bottom:4px solid var(--accent);
+}
+.hero-inner{display:flex;align-items:center;gap:16px;max-width:1100px;margin:0 auto;padding:0 16px}
+.logo{font-weight:800;font-size:28px;letter-spacing:1px}
+.logo .accent{color:var(--accent)}
+.title{margin:0;font-size:20px;color:var(--muted)}
+.container{max-width:1100px;margin:28px auto;padding:0 16px}
+.loading{color:var(--muted);font-size:18px}
+.error{color:#ffd2d2;background:#3a0000;padding:12px;border-radius:6px}
+.table-wrap{margin-top:12px;background:var(--glass);padding:8px;border-radius:8px;backdrop-filter: blur(6px)}
+.standings-table{width:100%;border-collapse:collapse;font-size:15px}
+.standings-table thead th{color:var(--muted);text-align:left;padding:10px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.standings-table tbody td{padding:12px 10px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+.standings-table tbody tr:nth-child(odd){background:linear-gradient(90deg, rgba(255,255,255,0.01), transparent)}
+.standings-table tbody tr:hover{background:linear-gradient(90deg, rgba(225,16,0,0.04), transparent)}
+.standings-table td:nth-child(1){width:48px;font-weight:700;color:var(--accent)}
+.standings-table td:nth-child(5){text-align:right;font-weight:600}
+.footer{text-align:center;color:var(--muted);padding:20px 0;font-size:13px}
+
+@media (max-width:700px){
+	.standings-table thead th:nth-child(3),.standings-table td:nth-child(3){display:none}
+}
+
+.details{margin-top:18px}
+.details-container{display:flex;gap:12px;flex-wrap:wrap}
+.card{position:relative;background:var(--panel);padding:16px;border-radius:8px;min-width:260px;max-width:420px;box-shadow:0 6px 18px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.03)}
+.card h3{margin:0 0 8px 0}
+.card ul{margin:0;padding-left:14px;color:var(--muted)}
+.card-close{position:absolute;top:8px;right:8px;border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer}
+
+.name-link{background:transparent;border:0;color:var(--accent);cursor:pointer;padding:0;font-weight:600}
+.name-link:hover{text-decoration:underline}
+
+/* floating details container */
+.floating-details{position:fixed;z-index:1200;pointer-events:auto}
+.floating-details .card{max-width:320px;min-width:220px}
+
