@@ -54,3 +54,25 @@ body{
 .floating-details{position:fixed;z-index:1200;pointer-events:auto}
 .floating-details .card{max-width:320px;min-width:220px}
 
+/* Add Race Weekend modal styles */
+.primary-btn{background:var(--accent);color:white;border:0;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+.primary-btn:hover{opacity:0.95}
+.modal{position:fixed;inset:0;display:none;z-index:1300}
+.modal.open{display:flex;align-items:center;justify-content:center}
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.55)}
+.modal-card{position:relative;background:var(--panel);padding:14px;border-radius:10px;max-width:980px;width:95%;z-index:1301;box-shadow:0 10px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+.modal-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.add-weekend-body{max-height:60vh;overflow:auto;padding:6px}
+.aw-row{display:grid;grid-template-columns:1fr 160px 160px;gap:8px;align-items:center;padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)}
+.aw-row.header{font-weight:700;color:var(--muted);border-bottom:2px solid rgba(255,255,255,0.03);padding-top:6px}
+.aw-col.name-col{font-weight:600;color:var(--accent)}
+.compact-select{width:100%;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+/* ensure dropdown text is readable (black) inside the modal */
+.modal .compact-select{background:#fff;color:#000;border-color:rgba(0,0,0,0.12)}
+.modal-card-footer{display:flex;justify-content:flex-end;padding-top:8px}
+.modal .error{margin:8px 0 6px 0}
+
+@media (max-width:700px){
+	.aw-row{grid-template-columns:1fr 120px 120px}
+}
+

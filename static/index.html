@@ -11,6 +11,7 @@
 			<div class="hero-inner">
 				<div class="logo">F<span class="accent">1</span></div>
 				<h1 class="title">Driver Standings</h1>
+				<button id="add-weekend-btn" class="primary-btn">Add Race Weekend</button>
 			</div>
 		</header>
 
@@ -40,6 +41,22 @@
 		</main>
 
 		<footer class="footer">Data provided by the backend API</footer>
+
+		<!-- Add Race Weekend modal (controlled by JS) -->
+		<div id="add-weekend-modal" class="modal">
+			<div class="modal-overlay" id="add-weekend-overlay"></div>
+			<div class="modal-card" id="add-weekend-card">
+				<header class="modal-card-header">
+					<h2>Add Race Weekend</h2>
+					<button id="add-weekend-close" class="card-close">×</button>
+				</header>
+				<div id="add-weekend-error" class="error" hidden></div>
+				<div id="add-weekend-body" class="add-weekend-body"></div>
+				<footer class="modal-card-footer">
+					<button id="add-weekend-submit" class="primary-btn">Submit</button>
+				</footer>
+			</div>
+		</div>
 
 		<script src="/script.js"></script>
 	</body>
