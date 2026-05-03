@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			<li><strong>Grand Prixs:</strong> ${d.grand_prixs ?? "—"}</li>
 			<li><strong>Career points:</strong> ${d.career_points ?? "—"}</li>
 			<li><strong>Podiums:</strong> ${d.podiums ?? "—"}</li>
+			<li><strong>DNFs:</strong> ${d.dnfs ?? "—"}</li>
 			<li><strong>World Championships:</strong> ${d.world_championships ?? "—"}</li>
 		`;
 		card.appendChild(close);
