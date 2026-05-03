@@ -2,7 +2,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException
 from typing import List
 from pydantic import BaseModel
-from sqlmodel import SQLModel, create_engine, Field, Session
+from sqlmodel import SQLModel, create_engine, Field, Session, select
 from models import Standings, Drivers, Teams, engine
 
 app = FastAPI()
@@ -47,8 +47,11 @@ def update_standings(quali_results: dict, race_results: dict):
             driverTeam = session.query(Drivers.team_name).filter(Drivers.driver_name == driver).one()[0]
             driver_position = race_results[driver]
             driver_quali = quali_results[driver]
+            
             if driver_position == "DNF":
                 driver_position = 23
+            driver_position = int(driver_position)
+            driver_quali = int(driver_quali)
             #Points
             if driver_position <=10:
                 #Standings
@@ -118,8 +121,8 @@ def update_standings(quali_results: dict, race_results: dict):
 
 
             #Highest Quali
-            driverHighestQuali = session.query(Drivers.highest_grid_position).filter(Drivers.driver_name == driver).one()[0]
-            teamHighestQuali = session.query(Teams.highest_grid_position).filter(Teams.team_name == driverTeam).one()[0]
+            driverHighestQuali = int(session.query(Drivers.highest_grid_position).filter(Drivers.driver_name == driver).one()[0])
+            teamHighestQuali = int(session.query(Teams.highest_grid_position).filter(Teams.team_name == driverTeam).one()[0])
             #Driver
             if driver_quali < driverHighestQuali:
                 statement = select(Drivers).where(Drivers.driver_name == driver)
@@ -138,8 +141,8 @@ def update_standings(quali_results: dict, race_results: dict):
                 session.refresh(record)
 
             #Highest Finish
-            driverHighestQuali = session.query(Drivers.highest_race_finish).filter(Drivers.driver_name == driver).one()[0]
-            teamHighestQuali = session.query(Teams.highest_race_finish).filter(Teams.team_name == driverTeam).one()[0]
+            driverHighestQuali = int(session.query(Drivers.highest_race_finish).filter(Drivers.driver_name == driver).one()[0])
+            teamHighestQuali = int(session.query(Teams.highest_race_finish).filter(Teams.team_name == driverTeam).one()[0])
             #Driver
             if driver_quali < driverHighestQuali:
                 statement = select(Drivers).where(Drivers.driver_name == driver)

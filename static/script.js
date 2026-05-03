@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		modalError.textContent = '';
 	}
 
-	modalSubmit && modalSubmit.addEventListener('click', () => {
+	modalSubmit && modalSubmit.addEventListener('click', async () => {
 		clearModalError();
 		// collect qualifying and race selections
 		const qualSelects = Array.from(modalBody.querySelectorAll('select[name^="qual_"]'));
@@ -223,15 +223,33 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		// Passed validation. Build result object and log to console (no backend call)
-		const results = driversList.map((name, i) => {
+		// Passed validation. Build dictionaries and POST to backend, then refresh standings
+		const qualDict = {};
+		const raceDict = {};
+		driversList.forEach((name, i) => {
 			const q = (modalBody.querySelector(`select[name=\"qual_${i}\"]`)||{}).value || '';
 			const r = (modalBody.querySelector(`select[name=\"race_${i}\"]`)||{}).value || '';
-			return { driver: name, qualifying: q, race: r };
+			// store numbers for positions, keep 'DNF' as string for race
+			qualDict[name] = q === '' ? null : Number(q);
+			raceDict[name] = (r === '') ? null : (r === 'DNF' ? 'DNF' : Number(r));
 		});
 
-		console.log('Add Race Weekend results (client-only):', results);
-		closeAddWeekend();
+		try {
+			modalSubmit.disabled = true;
+			const res = await fetch('/new_race', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ quali_results: qualDict, race_results: raceDict })
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			// refresh standings from backend and close modal
+			await fetchStandings();
+			closeAddWeekend();
+		} catch (err) {
+			showModalError('Failed to submit race: ' + (err.message || 'unknown error'));
+		} finally {
+			modalSubmit.disabled = false;
+		}
 	});
 
 	// DETAILS UI (floating)
