@@ -29,7 +29,7 @@ class Drivers(SQLModel, table=True):
     highest_grid_position: Optional[int] = None
     pole_positions: Optional[int] = None
     world_championships: Optional[int] = None
-
+    dnfs: Optional[int] = None
 
 
 class Teams(SQLModel, table=True):

@@ -8,19 +8,6 @@ from models import Standings, Drivers, Teams, engine
 app = FastAPI()
 
 
-class NewRace(BaseModel):
-    p1: str
-    p2: str
-    p3: str
-    p4: str
-    p5: str
-    p6: str
-    p7: str
-    p8: str
-    p9: str
-    p10: str
-    dnfs: List[str] = []
-
 @app.get("/standings")
 def get_standings():
     with Session(engine) as session:
@@ -46,106 +33,152 @@ def get_teams(name: str = None):
         return teams
 
 @app.post("/new_race")
-def update_standings(race: NewRace):
+def update_standings(quali_results: dict, race_results: dict):
     # Points mapping for positions 1..10 (standard F1)
-    points_map = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
-
-    positions = [
-        race.p1,
-        race.p2,
-        race.p3,
-        race.p4,
-        race.p5,
-        race.p6,
-        race.p7,
-        race.p8,
-        race.p9,
-        race.p10,
-    ]
-
-    # Validate uniqueness among finishers
-    if len(set(positions)) != len(positions):
-        raise HTTPException(status_code=400, detail="Finishing driver names must be unique")
-
-    # Validate DNF list doesn't overlap with finishers
-    overlap = set(positions) & set(race.dnfs)
-    if overlap:
-        raise HTTPException(status_code=400, detail=f"Drivers cannot both finish and DNF: {', '.join(overlap)}")
-
+    position_points = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
+    driver_list = []
+    
     with Session(engine) as session:
-        # Helper to get driver record
-        def get_driver(name: str) -> Drivers:
-            d = session.query(Drivers).filter(Drivers.driver_name == name).first()
-            if not d:
-                raise HTTPException(status_code=404, detail=f"Driver not found: {name}")
-            return d
+        drivers = session.query(Drivers.driver_name).all()
+        for driver in drivers:
+            driver_list.append(driver[0])
 
-        # Process finishers
-        for idx, name in enumerate(positions, start=1):
-            driver = get_driver(name)
-            pts = points_map.get(idx, 0)
+        for driver in driver_list:
+            driverTeam = session.query(Drivers.team_name).filter(Drivers.driver_name == driver).one()[0]
+            driver_position = race_results[driver]
+            driver_quali = quali_results[driver]
+            if driver_position == "DNF":
+                driver_position = 23
+            #Points
+            if driver_position <=10:
+                #Standings
+                points = position_points[driver_position]
+                statement = select(Standings).where(Standings.driver_name == driver)
+                record = session.exec(statement).one()
+                record.points += points
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+                #Driver
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.career_points += points
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+                #Teams
+                statement = select(Teams).where(Teams.team_name == driverTeam)
+                record = session.exec(statement).one()
+                record.total_points += points
+                session.add(record)
+                session.commit()
+                session.refresh(record)
 
-            # Update Drivers stats
-            driver.grand_prixs = (driver.grand_prixs or 0) + 1
-            driver.career_points = (driver.career_points or 0) + pts
-            # highest_race_finish: store as numeric string or keep existing if better
-            try:
-                current_best = int(driver.highest_race_finish) if driver.highest_race_finish is not None else None
-            except Exception:
-                current_best = None
-            if current_best is None or idx < current_best:
-                driver.highest_race_finish = str(idx)
-            # Podiums for top 3
-            if idx <= 3:
-                driver.podiums = (driver.podiums or 0) + 1
+            #Podiums
+            if driver_position <= 3:
+                #Driver
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.podiums += 1
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+                #Teams
+                statement = select(Teams).where(Teams.team_name == driverTeam)
+                record = session.exec(statement).one()
+                record.podiums += 1
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+            
+            #Driver Grand Prixs
+            statement = select(Drivers).where(Drivers.driver_name == driver)
+            record = session.exec(statement).one()
+            record.grand_prixs += 1
+            session.add(record)
+            session.commit()
+            session.refresh(record)
 
-            session.add(driver)
+            #Pole
+            if driver_quali == 1:
+                #Driver
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.pole_positions += 1
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+                #Teams
+                statement = select(Teams).where(Teams.team_name == driverTeam)
+                record = session.exec(statement).one()
+                record.pole_positions += 1
+                session.add(record)
+                session.commit()
+                session.refresh(record)
 
-            # Update Teams stats
-            if driver.team_name:
-                team = session.query(Teams).filter(Teams.team_name == driver.team_name).first()
-                if team:
-                    team.grand_prixs = (team.grand_prixs or 0) + 1
-                    team.total_points = (team.total_points or 0) + pts
-                    # team highest finish
-                    try:
-                        team_best = int(team.highest_race_finish) if team.highest_race_finish is not None else None
-                    except Exception:
-                        team_best = None
-                    if team_best is None or idx < team_best:
-                        team.highest_race_finish = str(idx)
-                    if idx <= 3:
-                        team.podiums = (team.podiums or 0) + 1
-                    session.add(team)
 
-            # Update Standings
-            standing = session.query(Standings).filter(Standings.driver_name == name).first()
-            if standing:
-                standing.points = (standing.points or 0) + pts
-                session.add(standing)
-            else:
-                # create new standings row if missing
-                new_stand = Standings(
-                    driver_name=name,
-                    nationality=driver.nationality,
-                    team_name=driver.team_name or "",
-                    points=pts,
-                )
-                session.add(new_stand)
+            #Highest Quali
+            driverHighestQuali = session.query(Drivers.highest_grid_position).filter(Drivers.driver_name == driver).one()[0]
+            teamHighestQuali = session.query(Teams.highest_grid_position).filter(Teams.team_name == driverTeam).one()[0]
+            #Driver
+            if driver_quali < driverHighestQuali:
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.highest_grid_position = driver_quali
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+            #Team
+            if driver_quali < teamHighestQuali:
+                statement = select(Teams).where(Teams.team_name == driverTeam)
+                record = session.exec(statement).one()
+                record.highest_grid_position = driver_quali
+                session.add(record)
+                session.commit()
+                session.refresh(record)
 
-        # Process DNFs: increment grand_prixs for DNFs, but no points
-        for name in race.dnfs or []:
-            driver = get_driver(name)
-            driver.grand_prixs = (driver.grand_prixs or 0) + 1
-            session.add(driver)
-            if driver.team_name:
-                team = session.query(Teams).filter(Teams.team_name == driver.team_name).first()
-                if team:
-                    team.grand_prixs = (team.grand_prixs or 0) + 1
-                    session.add(team)
+            #Highest Finish
+            driverHighestQuali = session.query(Drivers.highest_race_finish).filter(Drivers.driver_name == driver).one()[0]
+            teamHighestQuali = session.query(Teams.highest_race_finish).filter(Teams.team_name == driverTeam).one()[0]
+            #Driver
+            if driver_quali < driverHighestQuali:
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.highest_race_finish = driver_position
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+            #Team
+            if driver_quali < teamHighestQuali:
+                statement = select(Teams).where(Teams.team_name == driverTeam)
+                record = session.exec(statement).one()
+                record.highest_race_finish = driver_position
+                session.add(record)
+                session.commit()
+                session.refresh(record)
 
-        session.commit()
 
-    return {"status": "ok"}
+            #DNFs
+            if driver_position == 23:
+                #Driver
+                statement = select(Drivers).where(Drivers.driver_name == driver)
+                record = session.exec(statement).one()
+                record.dnfs += 1
+                session.add(record)
+                session.commit()
+                session.refresh(record)
+        #Teams Grand Prixs
+        teams_list = []
+        teams= session.query(Teams.team_name).all()
+        for team in teams:
+            teams_list.append(team[0])
+        for team in teams_list:
+            statement = select(Teams).where(Teams.team_name == team)
+            record = session.exec(statement).one()
+            record.grand_prixs += 1
+            session.add(record)
+            session.commit()
+            session.refresh(record)
+
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

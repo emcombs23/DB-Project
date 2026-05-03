@@ -74,6 +74,7 @@ def populate_drivers(session: Session):
             highest_grid_position=parse_int(row.get('Highest Grid Position')),
             pole_positions=parse_int(row.get('Pole Positions')),
             world_championships=parse_int(row.get('World Championships')),
+            dnfs=parse_int(row.get('DNFs')),
         )
         session.add(driver)
         count += 1
